@@ -12,7 +12,7 @@ public class Tile {
     }
 
     public string GetID() {
-        return string.Concat(X.ToString(), ":",Y.ToString());
+        return string.Format("{0}:{1}", X.ToString(), Y.ToString());
     }
 
 }

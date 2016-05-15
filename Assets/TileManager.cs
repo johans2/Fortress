@@ -4,15 +4,42 @@ using System.Linq;
 using System.Collections;
 
 public class TileManager : MonoBehaviour {
-    
+
+    private class ViewBounds {
+        public int xMax;
+        public int xMin;
+        public int yMax;
+        public int yMin;
+
+        public ViewBounds() {}
+
+        public ViewBounds(Vector3 topRight, Vector3 bottomLeft) {
+            xMax = GetTileByWorldPosition(topRight).X;
+            xMin = GetTileByWorldPosition(bottomLeft).X;
+            yMax = GetTileByWorldPosition(topRight).Y;
+            yMin = GetTileByWorldPosition(bottomLeft).Y;
+        }
+
+        public override bool Equals(object obj)
+        {
+            ViewBounds other = obj as ViewBounds;
+            if (other == null)
+            {
+                return false;
+            }
+
+            return xMax == other.xMax && xMin == other.xMin && yMax == other.yMax && yMin == other.yMin;
+        }
+    }
+
     public GameObject CenterObject;
     public GameObject tileParent;
 
     public GameObject tilePrefab;
     public int poolSize = 2000;
 
-    private float tileSize = 0.5f;
-    private Tile currentTile;
+    private static float tileSize = 0.5f;
+    private ViewBounds currentBounds;
     private Dictionary<string, GameObject> tileGameObjects;
     private List<Tile> currentTiles;
     private List<GameObject> tilePool;
@@ -23,12 +50,29 @@ public class TileManager : MonoBehaviour {
         tileGameObjects = new Dictionary<string, GameObject>();
         FillTilePool();
         Vector3 topRight = Camera.main.ViewportToWorldPoint(new Vector3(1, 1, -Camera.main.transform.position.z));
-        currentTile = GetTileByWorldPosition(topRight);
-        OnEnterNewTile(currentTile, currentTile);
+        Vector3 bottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, -Camera.main.transform.position.z));
+        currentBounds = new ViewBounds(topRight, bottomLeft);
+
+        FillView(currentBounds);
     }
     
 	void Update () {
-        CheckForNewTile();
+        CheckBounds();
+    }
+
+    void FillView(ViewBounds bounds) {
+        for (int y = bounds.yMin; y <= bounds.yMax; y++)
+        {
+            for (int x = bounds.xMin; x <= bounds.xMax; x++)
+            {
+                Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
+                //ActivateTile(tilePosition);
+                
+                Tile tile = new Tile(x, y);
+                GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
+                tileGameObjects.Add(tile.GetID(), tileGameObject);
+            }
+        }
     }
 
     void FillTilePool() {
@@ -63,101 +107,72 @@ public class TileManager : MonoBehaviour {
         tilePool.Add(tile);
     }
 
-    void CheckForNewTile() {
+    void CheckBounds() {
         float dist = -Camera.main.transform.position.z;
         Vector3 topRight = Camera.main.ViewportToWorldPoint(new Vector3(1, 1, dist));
-        Tile calculatedTile = GetTileByWorldPosition(topRight);
+        Vector3 bottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, dist));
 
-        if (calculatedTile.X != currentTile.X || calculatedTile.Y != currentTile.Y)
+        ViewBounds calculatedBounds = new ViewBounds(topRight, bottomLeft);
+
+        if (!calculatedBounds.Equals(currentBounds))
         {
-            OnEnterNewTile(calculatedTile, currentTile);
-            currentTile = calculatedTile;
+            OnUpdatedBounds(calculatedBounds, currentBounds);
         }
+        
     }
 
-    private void OnEnterNewTile(Tile newTile, Tile oldTile) {
-
-        int buffer = 2;
-
-        //Debug.Log("New tile: " + newTile.X + " : " + newTile.Y);
-
-        float dist = -Camera.main.transform.position.z;
-        Vector3 bottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, dist));
-        Vector3 topLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 1, dist));
-        Vector3 topRight = Camera.main.ViewportToWorldPoint(new Vector3(1, 1, dist));
-        Vector3 bottomRight = Camera.main.ViewportToWorldPoint(new Vector3(1, 0, dist));
-
-        Tile topLeftTile = GetTileByWorldPosition(topLeft);
-        Tile topRightTile = GetTileByWorldPosition(topRight);
-        Tile bottomLeftTile = GetTileByWorldPosition(bottomLeft);
-        Tile bottomRightTile = GetTileByWorldPosition(bottomRight);
-        
-        List<Tile> newTiles = new List<Tile>();
-        List<Tile> deleteList = new List<Tile>();
-        
-        // Get new tiles
-        for (int i = topLeftTile.X - buffer; i < topRightTile.X + buffer; i++)
+    private void OnUpdatedBounds(ViewBounds newBounds, ViewBounds oldBounds) {
+        int deltaX = newBounds.xMax - oldBounds.xMax;
+        int deltaY = newBounds.yMax - oldBounds.yMax;
+           
+        // Y tiles top to bot
+        for (int y = newBounds.yMax; y > (newBounds.yMax - deltaY); y--)
         {
-            for (int j = topLeftTile.Y + buffer; j > bottomLeftTile.Y - buffer; j--)
+            // X tiles left to right
+            for (int x = newBounds.xMin; x <= newBounds.xMax; x++)
             {
-                newTiles.Add(new Tile(i, j));
+                // Create tile downwards
+                Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
+                Tile tile = new Tile(x, y);
+                GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
+                tileGameObjects.Add(tile.GetID(), tileGameObject);
+                
             }
         }
 
-        // Check old tiles if in current bounds
-        for (int i = 0; i < currentTiles.Count; i++)
+        // Create tiles for x diff
+        for (int y = newBounds.yMax - deltaY; y >= newBounds.yMin; y--)
         {
-            Tile tile = currentTiles[i];
-            if (tile.X <= topLeftTile.X || tile.X >= topRightTile.X)
+            for (int x = (newBounds.xMax - deltaX + 1); x < newBounds.xMax + 1; x++)
             {
-                deleteList.Add(tile);
-            }
-            if (tile.Y >= topLeftTile.Y || tile.Y <= bottomLeftTile.Y)
-            {
-                deleteList.Add(tile);
-            }
+                Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
+                Tile tile = new Tile(x, y);
+                GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
+                tileGameObjects.Add(tile.GetID(), tileGameObject);
 
-        }
+                // Remove tiles on other side
+                string tileToRemoveId = new Tile(x - (oldBounds.xMax - oldBounds.xMin), y).GetID();
+                GameObject tileToDestroy;
 
-        // Delete tiles in deletelist
-        for (int i = 0; i < deleteList.Count; i++)
-        {
-            string id = deleteList[i].GetID();
-            if (tileGameObjects.ContainsKey(id))
-            {
-                //Destroy(tileGameObjects[id]);
-                DeactivateTile(tileGameObjects[id]);
-                tileGameObjects.Remove(id);
+                if (tileGameObjects.TryGetValue(tileToRemoveId, out tileToDestroy))
+                {
+                    Destroy(tileToDestroy);
+                    tileGameObjects.Remove(tileToRemoveId);
+                }
+                /*
+                Destroy(tileGameObjects[tileToRemove.GetID()]);
+                tileGameObjects.Remove(tileToRemove.GetID());*/
             }
         }
-        currentTiles = newTiles;
+        currentBounds = newBounds;
 
-        // Create new tiles if not present in currenTiles
-        for (int i = 0; i < newTiles.Count; i++)
-        {
-            GameObject tileGameObject;
-            if (!tileGameObjects.TryGetValue(newTiles[i].GetID(), out tileGameObject))
-            {
-
-
-                Vector3 position = GetWorldPositionByTileIndex(newTiles[i].X, newTiles[i].Y);
-
-
-                GameObject newTileGO = ActivateTile(position); 
-                //GameObject newTileGO = (GameObject)Instantiate(tilePrefab, position, Quaternion.identity);
-                tileGameObjects.Add(newTiles[i].GetID(), newTileGO);
-
-
-            }
-        }
-        
     }
     
     private Vector3 GetWorldPositionByTileIndex(int x, int y) {
         return new Vector3(x * tileSize, y * tileSize, 0);
     }
 
-    public Tile GetTileByWorldPosition(Vector3 worldPosition) {
+    public static Tile GetTileByWorldPosition(Vector3 worldPosition) {
         int tileX;
         int tileY;
 
