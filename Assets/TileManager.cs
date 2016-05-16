@@ -38,29 +38,52 @@ public class TileManager : MonoBehaviour {
     public GameObject tilePrefab;
     public int poolSize = 2000;
 
-    private static float tileSize = 0.5f;
+    private static float tileSize = 1f;
     private ViewBounds currentBounds;
     private Dictionary<string, GameObject> tileGameObjects;
     private List<Tile> currentTiles;
     private List<GameObject> tilePool;
+
+    private Tile currentCenter;
+
+    private int viewWidth;
+    private int viewHeight;
 
     void Start() {
         currentTiles = new List<Tile>();
         tilePool = new List<GameObject>();
         tileGameObjects = new Dictionary<string, GameObject>();
         FillTilePool();
+
         Vector3 topRight = Camera.main.ViewportToWorldPoint(new Vector3(1, 1, -Camera.main.transform.position.z));
         Vector3 bottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, -Camera.main.transform.position.z));
-        currentBounds = new ViewBounds(topRight, bottomLeft);
+        Vector3 center = Camera.main.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, -Camera.main.transform.position.z));
 
-        FillView(currentBounds);
+        //currentBounds = new ViewBounds(topRight, bottomLeft);
+        currentCenter = GetTileByWorldPosition(center);
+        viewWidth = GetTileByWorldPosition(topRight).X - GetTileByWorldPosition(bottomLeft).X;
+        viewHeight = GetTileByWorldPosition(topRight).Y - GetTileByWorldPosition(bottomLeft).Y;
+
+        FillView(currentCenter, viewWidth, viewHeight);
     }
     
 	void Update () {
-        CheckBounds();
+        //CheckBounds();
     }
 
-    void FillView(ViewBounds bounds) {
+    void FillView(Tile center, int viewWidth, int viewHeight) {
+        for(int y = center.Y + (viewHeight / 2); y >= (center.Y - viewHeight / 2); y--) 
+        {
+            for(int x = center.X - (viewWidth / 2) ; x <= center.X + (viewWidth / 2); x++) 
+            {
+                Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
+
+                Tile tile = new Tile(x, y);
+                GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
+                tileGameObjects.Add(tile.GetID(), tileGameObject);
+            }
+        }
+        /*
         for (int y = bounds.yMin; y <= bounds.yMax; y++)
         {
             for (int x = bounds.xMin; x <= bounds.xMax; x++)
@@ -72,7 +95,7 @@ public class TileManager : MonoBehaviour {
                 GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
                 tileGameObjects.Add(tile.GetID(), tileGameObject);
             }
-        }
+        }*/
     }
 
     void FillTilePool() {
@@ -124,17 +147,21 @@ public class TileManager : MonoBehaviour {
     private void OnUpdatedBounds(ViewBounds newBounds, ViewBounds oldBounds) {
         int deltaX = newBounds.xMax - oldBounds.xMax;
         int deltaY = newBounds.yMax - oldBounds.yMax;
-           
+
+        Color color = Random.ColorHSV();
+
         // Y tiles top to bot
         for (int y = newBounds.yMax; y > (newBounds.yMax - deltaY); y--)
         {
             // X tiles left to right
             for (int x = newBounds.xMin; x <= newBounds.xMax; x++)
             {
+                
                 // Create tile downwards
                 Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
                 Tile tile = new Tile(x, y);
                 GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
+                tileGameObject.GetComponent<Renderer>().material.color = color;
                 tileGameObjects.Add(tile.GetID(), tileGameObject);
                 
             }
@@ -145,25 +172,18 @@ public class TileManager : MonoBehaviour {
         {
             for (int x = (newBounds.xMax - deltaX + 1); x < newBounds.xMax + 1; x++)
             {
+                
                 Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
                 Tile tile = new Tile(x, y);
                 GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
+                tileGameObject.GetComponent<Renderer>().material.color = color;
                 tileGameObjects.Add(tile.GetID(), tileGameObject);
-
-                // Remove tiles on other side
-                string tileToRemoveId = new Tile(x - (oldBounds.xMax - oldBounds.xMin), y).GetID();
-                GameObject tileToDestroy;
-
-                if (tileGameObjects.TryGetValue(tileToRemoveId, out tileToDestroy))
-                {
-                    Destroy(tileToDestroy);
-                    tileGameObjects.Remove(tileToRemoveId);
-                }
-                /*
-                Destroy(tileGameObjects[tileToRemove.GetID()]);
-                tileGameObjects.Remove(tileToRemove.GetID());*/
+                
             }
         }
+
+
+
         currentBounds = newBounds;
 
     }
@@ -200,3 +220,21 @@ public class TileManager : MonoBehaviour {
     }
     
 }
+
+/*
+// Remove tiles on other side
+string tileToRemoveId = new Tile(x - deltaX, y - (boardHeight + 1)).GetID();
+                if(tileGameObjects.ContainsKey(tileToRemoveId)) {
+                    Destroy(tileGameObjects[tileToRemoveId]);
+tileGameObjects.Remove(tileToRemoveId);
+                }
+*/
+
+/*
+// Remove tiles on other side
+string tileToRemoveId = new Tile(x - (boardWidth + 1), y).GetID();
+                if(tileGameObjects.ContainsKey(tileToRemoveId)) {
+                    Destroy(tileGameObjects[tileToRemoveId]);
+tileGameObjects.Remove(tileToRemoveId);
+                }
+*/
