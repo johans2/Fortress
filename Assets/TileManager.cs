@@ -149,10 +149,20 @@ public class TileManager : MonoBehaviour {
         int deltaX = newCenter.X - oldCenter.X;
         int deltaY = newCenter.Y - oldCenter.Y;
         //Debug.Log("oldCenter: " + oldCenter.X + ":" + oldCenter.Y  + "  ----  " + "newCenter: " + newCenter.X + ":" + newCenter.Y + " ---- " + "DeltaY: " + deltaY);
-        Color color = Random.ColorHSV();
+        Color color = Color.black;
 
-        int passOneYStart = oldCenter.Y + (viewHeight / 2) + 1;
-        int passOneYStop = oldCenter.Y + (viewHeight / 2) + deltaY;
+        int passOneYStart;
+        int passOneYStop;
+
+        if(deltaY >= 0) {
+            passOneYStart = oldCenter.Y + (viewHeight / 2) + 1;
+            passOneYStop = oldCenter.Y + (viewHeight / 2) + deltaY;
+        }
+        else{
+            passOneYStart = oldCenter.Y - (viewHeight / 2) + deltaY;
+            passOneYStop = oldCenter.Y - (viewHeight / 2) - 1;
+        }
+        
         int passOneXStart = newCenter.X - (viewWidth / 2);
         int passOneXStop = newCenter.X + (viewWidth / 2);
         
@@ -166,9 +176,11 @@ public class TileManager : MonoBehaviour {
                 GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
                 tileGameObject.GetComponent<Renderer>().material.color = color;
                 tileGameObjects.Add(tile.GetID(), tileGameObject);
-                
+
                 // Remove tiles on bottom
-                string tileToRemoveId = new Tile(x - deltaX,y - viewHeight - 1).GetID();
+                
+                int removeOffset = deltaY >= 0 ? (-viewHeight - 1) : viewHeight + 1;
+                string tileToRemoveId = new Tile(x - deltaX,y + removeOffset).GetID();
                 if (tileGameObjects.ContainsKey(tileToRemoveId))
                 {
                     Destroy(tileGameObjects[tileToRemoveId]);
@@ -177,24 +189,43 @@ public class TileManager : MonoBehaviour {
             }
         }
 
+        color = Color.red;    
+
         int passTwoYStart = newCenter.Y - (viewHeight / 2);
         int passTwoYStop = newCenter.Y + (viewHeight / 2) - deltaY;
-        int passTwoXStart = newCenter.X + (viewWidth / 2) - deltaX + 1;
-        int passTwoXStop = newCenter.X + (viewWidth / 2);
+        int passTwoXStart;
+        int passTwoXStop;
+
+        if(deltaX >= 0) {
+            passTwoXStart = newCenter.X + (viewWidth / 2) - deltaX + 1;
+            passTwoXStop = newCenter.X + (viewWidth / 2);
+        }
+        else {
+            passTwoXStart = oldCenter.X - (viewWidth / 2) + deltaX;
+            passTwoXStop = oldCenter.X - (viewWidth / 2) - 1;
+        }
 
         for (int y = passTwoYStart; y <= passTwoYStop; y++)
         {
             for (int x = passTwoXStart; x <= passTwoXStop; x++)
             {
-                // Create tile downwards
-                Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
-                Tile tile = new Tile(x, y);
-                GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
-                tileGameObject.GetComponent<Renderer>().material.color = color;
-                tileGameObjects.Add(tile.GetID(), tileGameObject);
+                try {
+                    // Create tile downwards
+                    Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
+                    Tile tile = new Tile(x, y);
+                    GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
+                    tileGameObject.GetComponent<Renderer>().material.color = color;
+                    tileGameObjects.Add(tile.GetID(), tileGameObject);
 
+                }
+                catch(System.Exception) {
+
+                    throw;
+                }
+                
                 // Remove tiles on bottom
-                string tileToRemoveId = new Tile(x - viewWidth - 1, y).GetID();
+                int removeOffset = deltaX >= 0 ? (-viewWidth - 1) : viewWidth + 1;
+                string tileToRemoveId = new Tile(x + removeOffset, y).GetID();
                 if (tileGameObjects.ContainsKey(tileToRemoveId))
                 {
                     Destroy(tileGameObjects[tileToRemoveId]);
