@@ -11,7 +11,7 @@ public class TileManager : MonoBehaviour {
         public int yMax;
         public int yMin;
 
-        public ViewBounds() {}
+        public ViewBounds() { }
 
         public ViewBounds(Vector3 topRight, Vector3 bottomLeft) {
             xMax = GetTileByWorldPosition(topRight).X;
@@ -20,11 +20,9 @@ public class TileManager : MonoBehaviour {
             yMin = GetTileByWorldPosition(bottomLeft).Y;
         }
 
-        public override bool Equals(object obj)
-        {
+        public override bool Equals(object obj) {
             ViewBounds other = obj as ViewBounds;
-            if (other == null)
-            {
+            if(other == null) {
                 return false;
             }
 
@@ -38,7 +36,7 @@ public class TileManager : MonoBehaviour {
     public GameObject tilePrefab;
     public int poolSize = 2000;
 
-    private static float tileSize = 1f;
+    private static float tileSize = 2f;
     private ViewBounds currentBounds;
     private Dictionary<string, GameObject> tileGameObjects;
     private List<Tile> currentTiles;
@@ -66,8 +64,8 @@ public class TileManager : MonoBehaviour {
 
         FillView(currentCenter, viewWidth, viewHeight);
     }
-    
-	void Update () {
+
+    void Update() {
         CheckTile();
         UpdateDebugLines();
     }
@@ -86,11 +84,9 @@ public class TileManager : MonoBehaviour {
 
     void FillView(Tile center, int viewWidth, int viewHeight) {
         Color color = Random.ColorHSV();
-        for (int y = center.Y + (viewHeight / 2); y >= (center.Y - viewHeight / 2); y--) 
-        {
+        for(int y = center.Y + (viewHeight / 2); y >= (center.Y - viewHeight / 2); y--) {
             color = Random.ColorHSV();
-            for(int x = center.X - (viewWidth / 2) ; x <= center.X + (viewWidth / 2); x++) 
-            {
+            for(int x = center.X - (viewWidth / 2); x <= center.X + (viewWidth / 2); x++) {
                 Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
                 Tile tile = new Tile(x, y);
                 GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
@@ -101,8 +97,7 @@ public class TileManager : MonoBehaviour {
     }
 
     void FillTilePool() {
-        for (int i = 0; i <= poolSize; i++)
-        {
+        for(int i = 0; i <= poolSize; i++) {
             GameObject tile = (GameObject)Instantiate(tilePrefab, new Vector3(999f, 999f, 999f), Quaternion.identity);
             tile.transform.parent = tileParent.transform;
             tile.SetActive(false);
@@ -111,14 +106,12 @@ public class TileManager : MonoBehaviour {
     }
 
     GameObject ActivateTile(Vector3 position) {
-        for (int i = 0; i < tilePool.Count; i++)
-        {
-            if (!tilePool[i].activeInHierarchy)
-            {
+        for(int i = 0; i < tilePool.Count; i++) {
+            if(!tilePool[i].activeInHierarchy) {
                 tilePool[i].transform.position = position;
 
                 tilePool[i].GetComponent<Renderer>().material.color = new Color(position.x / 20f, position.y / 20f, 0.5f);
-                
+
                 tilePool[i].SetActive(true);
 
                 return tilePool[i];
@@ -134,110 +127,82 @@ public class TileManager : MonoBehaviour {
 
     void CheckTile() {
         float dist = -Camera.main.transform.position.z;
-        
+
         Vector3 newCenterPos = Camera.main.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, dist));
         Tile newCenter = GetTileByWorldPosition(newCenterPos);
 
-        if (currentCenter.X != newCenter.X || currentCenter.Y != newCenter.Y)
-        {
+        if(currentCenter.X != newCenter.X || currentCenter.Y != newCenter.Y) {
             OnEnterNewTile(currentCenter, newCenter);
         }
-        
+
     }
 
     private void OnEnterNewTile(Tile oldCenter, Tile newCenter) {
         int deltaX = newCenter.X - oldCenter.X;
         int deltaY = newCenter.Y - oldCenter.Y;
         //Debug.Log("oldCenter: " + oldCenter.X + ":" + oldCenter.Y  + "  ----  " + "newCenter: " + newCenter.X + ":" + newCenter.Y + " ---- " + "DeltaY: " + deltaY);
-        Color color = Color.black;
 
-        int passOneYStart;
-        int passOneYStop;
+        int yStart = newCenter.Y - viewHeight / 2;
+        int yStop = newCenter.Y + viewHeight / 2;
+        int xStart = newCenter.X - viewWidth / 2;
+        int xStop = newCenter.X + viewWidth / 2;
+        /*
+        for(int y = oldCenter.Y - (viewHeight / 2); y < oldCenter.Y + (viewHeight / 2); y++) {
+            for(int x = oldCenter.X - (viewHeight / 2); x < oldCenter.X + (viewWidth / 2); x++) {
+                bool inXInterval = x > newCenter.X - viewWidth / 2 - 1 && x < newCenter.X + viewWidth / 2;
+                bool inYInterval = y > newCenter.Y - viewHeight / 2 - 1 && y < newCenter.Y + viewHeight / 2;
 
-        if(deltaY >= 0) {
-            passOneYStart = oldCenter.Y + (viewHeight / 2) + 1;
-            passOneYStop = oldCenter.Y + (viewHeight / 2) + deltaY;
+                if(inXInterval && inYInterval) {
+                    continue;
+                }
+
+                string tileToRemoveId = new Tile(x, y).GetID();
+                if(tileGameObjects.ContainsKey(tileToRemoveId)) {
+                    Destroy(tileGameObjects[tileToRemoveId]);
+                    tileGameObjects.Remove(tileToRemoveId);
+                    //Debug.Log("Destroy");
+                }
+
+            }
         }
-        else{
-            passOneYStart = oldCenter.Y - (viewHeight / 2) + deltaY;
-            passOneYStop = oldCenter.Y - (viewHeight / 2) - 1;
-        }
-        
-        int passOneXStart = newCenter.X - (viewWidth / 2);
-        int passOneXStop = newCenter.X + (viewWidth / 2);
-        
-        for (int y = passOneYStart; y <= passOneYStop; y++)
-        {
-            for (int x = passOneXStart; x <= passOneXStop; x++)
-            {
-                // Create tile downwards
+        */
+        // Add new tiles
+        for(int y = yStart; y <= yStop; y++) {
+            for(int x = xStart; x <= xStop; x++) {
+                GameObject existing;
                 Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
                 Tile tile = new Tile(x, y);
-                GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
-                tileGameObject.GetComponent<Renderer>().material.color = color;
-                tileGameObjects.Add(tile.GetID(), tileGameObject);
 
-                // Remove tiles on bottom
-                
-                int removeOffset = deltaY >= 0 ? (-viewHeight - 1) : viewHeight + 1;
-                string tileToRemoveId = new Tile(x - deltaX,y + removeOffset).GetID();
-                if (tileGameObjects.ContainsKey(tileToRemoveId))
-                {
-                    Destroy(tileGameObjects[tileToRemoveId]);
-                    tileGameObjects.Remove(tileToRemoveId);
-                }
-            }
-        }
-
-        color = Color.red;    
-
-        int passTwoYStart = newCenter.Y - (viewHeight / 2);
-        int passTwoYStop = newCenter.Y + (viewHeight / 2) - deltaY;
-        int passTwoXStart;
-        int passTwoXStop;
-
-        if(deltaX >= 0) {
-            passTwoXStart = newCenter.X + (viewWidth / 2) - deltaX + 1;
-            passTwoXStop = newCenter.X + (viewWidth / 2);
-        }
-        else {
-            passTwoXStart = oldCenter.X - (viewWidth / 2) + deltaX;
-            passTwoXStop = oldCenter.X - (viewWidth / 2) - 1;
-        }
-
-        for (int y = passTwoYStart; y <= passTwoYStop; y++)
-        {
-            for (int x = passTwoXStart; x <= passTwoXStop; x++)
-            {
-                try {
-                    // Create tile downwards
-                    Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
-                    Tile tile = new Tile(x, y);
+                if(!tileGameObjects.TryGetValue(tile.GetID(), out existing)) {
                     GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
-                    tileGameObject.GetComponent<Renderer>().material.color = color;
+                    tileGameObject.GetComponent<Renderer>().material.color = Random.ColorHSV();
                     tileGameObjects.Add(tile.GetID(), tileGameObject);
-
-                }
-                catch(System.Exception) {
-
-                    throw;
-                }
-                
-                // Remove tiles on bottom
-                int removeOffset = deltaX >= 0 ? (-viewWidth - 1) : viewWidth + 1;
-                string tileToRemoveId = new Tile(x + removeOffset, y).GetID();
-                if (tileGameObjects.ContainsKey(tileToRemoveId))
-                {
-                    Destroy(tileGameObjects[tileToRemoveId]);
-                    tileGameObjects.Remove(tileToRemoveId);
+                    /*
+                    if(deltaX != 0) {
+                        int deltaDirection = (deltaX / Mathf.Abs(deltaX));
+                        int xRemove = newCenter.X + ((viewWidth / 2) * deltaDirection + deltaDirection *2);
+                        string tileToRemoveId = new Tile(xRemove, y).GetID();
+                        if(tileGameObjects.ContainsKey(tileToRemoveId)) {
+                            Destroy(tileGameObjects[tileToRemoveId]);
+                            tileGameObjects.Remove(tileToRemoveId);
+                            Debug.Log("Destroy");
+                        }
+                    }
+                    if(deltaY != 0) {
+                        int deltaDirection = (deltaY / Mathf.Abs(deltaY));
+                        int yRemove = newCenter.Y + ((viewHeight / 2) * deltaDirection + deltaDirection *2);
+                        string tileToRemoveId = new Tile(x, yRemove).GetID();
+                        if(tileGameObjects.ContainsKey(tileToRemoveId)) {
+                            Destroy(tileGameObjects[tileToRemoveId]);
+                            tileGameObjects.Remove(tileToRemoveId);
+                            Debug.Log("Destroy");
+                        }
+                    }*/
                 }
             }
         }
-
         currentCenter = newCenter;
-        
     }
-    
     private Vector3 GetWorldPositionByTileIndex(int x, int y) {
         return new Vector3(x * tileSize, y * tileSize, 0);
     }
@@ -246,21 +211,17 @@ public class TileManager : MonoBehaviour {
         int tileX;
         int tileY;
 
-        if (worldPosition.x > 0f)
-        {
+        if(worldPosition.x > 0f) {
             tileX = Mathf.FloorToInt(worldPosition.x / tileSize);
         }
-        else
-        {
+        else {
             tileX = Mathf.CeilToInt(Mathf.Abs(worldPosition.x) / tileSize) * -1;
         }
 
-        if (worldPosition.y > 0f)
-        {
+        if(worldPosition.y > 0f) {
             tileY = Mathf.FloorToInt(worldPosition.y / tileSize);
         }
-        else
-        {
+        else {
             tileY = Mathf.CeilToInt(Mathf.Abs(worldPosition.y) / tileSize) * -1;
         }
 
@@ -268,7 +229,7 @@ public class TileManager : MonoBehaviour {
 
 
     }
-    
+
 }
 
 /*
