@@ -15,4 +15,8 @@ public class Tile {
         return string.Format("{0}:{1}", X.ToString(), Y.ToString());
     }
 
+    public static string GetIDbyXY(int x, int y) {
+        return string.Format("{0}:{1}", x.ToString(), y.ToString());
+    }
+
 }
