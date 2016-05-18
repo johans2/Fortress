@@ -11,9 +11,8 @@ public class TileManager : MonoBehaviour {
     public GameObject tilePrefab;
     public int poolSize = 2000;
 
-    private static float tileSize = 2f;
-    private Dictionary<string, GameObject> tileGameObjects;
-    private List<Tile> currentTiles;
+    private static float tileSize = 1f;
+    private Dictionary<long, GameObject> tileGameObjects;
     private List<GameObject> tilePool;
 
     private Tile currentCenter;
@@ -22,16 +21,13 @@ public class TileManager : MonoBehaviour {
     private int viewHeight;
 
     void Start() {
-        currentTiles = new List<Tile>();
         tilePool = new List<GameObject>();
-        tileGameObjects = new Dictionary<string, GameObject>();
+        tileGameObjects = new Dictionary<long, GameObject>(poolSize);
         FillTilePool();
-
-        Vector3 topRight = Camera.main.ViewportToWorldPoint(new Vector3(1, 1, -Camera.main.transform.position.z));
+        
         Vector3 bottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, -Camera.main.transform.position.z));
         Vector3 center = Camera.main.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, -Camera.main.transform.position.z));
-
-        //currentBounds = new ViewBounds(topRight, bottomLeft);
+        
         currentCenter = GetTileByWorldPosition(center);
         viewWidth = (GetTileByWorldPosition(center).X - GetTileByWorldPosition(bottomLeft).X) * 2;
         viewHeight = (GetTileByWorldPosition(center).Y - GetTileByWorldPosition(bottomLeft).Y) * 2;
@@ -83,9 +79,6 @@ public class TileManager : MonoBehaviour {
         for(int i = 0; i < tilePool.Count; i++) {
             if(!tilePool[i].activeInHierarchy) {
                 tilePool[i].transform.position = position;
-
-                tilePool[i].GetComponent<Renderer>().material.color = Random.ColorHSV();
-
                 tilePool[i].SetActive(true);
 
                 return tilePool[i];
@@ -100,9 +93,7 @@ public class TileManager : MonoBehaviour {
     }
 
     void CheckTile() {
-        float dist = -Camera.main.transform.position.z;
-
-        Vector3 newCenterPos = Camera.main.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, dist));
+        Vector3 newCenterPos = Camera.main.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, -Camera.main.transform.position.z));
         Tile newCenter = GetTileByWorldPosition(newCenterPos);
 
         if(currentCenter.X != newCenter.X || currentCenter.Y != newCenter.Y) {
@@ -112,10 +103,6 @@ public class TileManager : MonoBehaviour {
     }
 
     private void OnEnterNewTile(Tile oldCenter, Tile newCenter) {
-        int deltaX = newCenter.X - oldCenter.X;
-        int deltaY = newCenter.Y - oldCenter.Y;
-        //Debug.Log("oldCenter: " + oldCenter.X + ":" + oldCenter.Y  + "  ----  " + "newCenter: " + newCenter.X + ":" + newCenter.Y + " ---- " + "DeltaY: " + deltaY);
-
         int yStartNew = newCenter.Y - viewHeight / 2;
         int yStopNew = newCenter.Y + viewHeight / 2;
         int xStartNew = newCenter.X - viewWidth / 2;
@@ -126,7 +113,7 @@ public class TileManager : MonoBehaviour {
             for(int x = xStartNew; x <= xStopNew; x++) {
                 GameObject existing;
                 Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
-                string newTileId = Tile.GetIDbyXY(x, y);
+                long newTileId = Tile.GetIDbyXY(x, y);
 
                 if(!tileGameObjects.TryGetValue(newTileId, out existing)) {
                     GameObject newTileGameObject = ActivateTile(tilePosition);
@@ -150,8 +137,7 @@ public class TileManager : MonoBehaviour {
                 }
 
                 GameObject tileToRemove;
-                string idToRemove = Tile.GetIDbyXY(x, y);
-
+                long idToRemove = Tile.GetIDbyXY(x, y);
                 if(tileGameObjects.TryGetValue(idToRemove, out tileToRemove)) {
                     tileGameObjects.Remove(idToRemove);
                     DeactivateTile(tileToRemove);

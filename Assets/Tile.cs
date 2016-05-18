@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Tile {
+public struct Tile {
 
     public int X { get; private set; }
     public int Y { get; private set; }
@@ -11,12 +11,12 @@ public class Tile {
         Y = y;
     }
 
-    public string GetID() {
-        return string.Format("{0}:{1}", X.ToString(), Y.ToString());
+    public long GetID() {
+        return ((long)X << 32) + Y;
     }
 
-    public static string GetIDbyXY(int x, int y) {
-        return string.Format("{0}:{1}", x.ToString(), y.ToString());
+    public static long GetIDbyXY(int x, int y) {
+        return ((long)x << 32) + y; ;
     }
 
 }
