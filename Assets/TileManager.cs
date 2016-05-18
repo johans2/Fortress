@@ -142,33 +142,14 @@ public class TileManager : MonoBehaviour {
         int deltaY = newCenter.Y - oldCenter.Y;
         //Debug.Log("oldCenter: " + oldCenter.X + ":" + oldCenter.Y  + "  ----  " + "newCenter: " + newCenter.X + ":" + newCenter.Y + " ---- " + "DeltaY: " + deltaY);
 
-        int yStart = newCenter.Y - viewHeight / 2;
-        int yStop = newCenter.Y + viewHeight / 2;
-        int xStart = newCenter.X - viewWidth / 2;
-        int xStop = newCenter.X + viewWidth / 2;
-        /*
-        for(int y = oldCenter.Y - (viewHeight / 2); y < oldCenter.Y + (viewHeight / 2); y++) {
-            for(int x = oldCenter.X - (viewHeight / 2); x < oldCenter.X + (viewWidth / 2); x++) {
-                bool inXInterval = x > newCenter.X - viewWidth / 2 - 1 && x < newCenter.X + viewWidth / 2;
-                bool inYInterval = y > newCenter.Y - viewHeight / 2 - 1 && y < newCenter.Y + viewHeight / 2;
-
-                if(inXInterval && inYInterval) {
-                    continue;
-                }
-
-                string tileToRemoveId = new Tile(x, y).GetID();
-                if(tileGameObjects.ContainsKey(tileToRemoveId)) {
-                    Destroy(tileGameObjects[tileToRemoveId]);
-                    tileGameObjects.Remove(tileToRemoveId);
-                    //Debug.Log("Destroy");
-                }
-
-            }
-        }
-        */
+        int yAddStart = newCenter.Y - viewHeight / 2;
+        int yAddStop = newCenter.Y + viewHeight / 2;
+        int xAddStart = newCenter.X - viewWidth / 2;
+        int xAddStop = newCenter.X + viewWidth / 2;
+        
         // Add new tiles
-        for(int y = yStart; y <= yStop; y++) {
-            for(int x = xStart; x <= xStop; x++) {
+        for(int y = yAddStart; y <= yAddStop; y++) {
+            for(int x = xAddStart; x <= xAddStop; x++) {
                 GameObject existing;
                 Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
                 Tile tile = new Tile(x, y);
@@ -177,30 +158,33 @@ public class TileManager : MonoBehaviour {
                     GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
                     tileGameObject.GetComponent<Renderer>().material.color = Random.ColorHSV();
                     tileGameObjects.Add(tile.GetID(), tileGameObject);
-                    /*
-                    if(deltaX != 0) {
-                        int deltaDirection = (deltaX / Mathf.Abs(deltaX));
-                        int xRemove = newCenter.X + ((viewWidth / 2) * deltaDirection + deltaDirection *2);
-                        string tileToRemoveId = new Tile(xRemove, y).GetID();
-                        if(tileGameObjects.ContainsKey(tileToRemoveId)) {
-                            Destroy(tileGameObjects[tileToRemoveId]);
-                            tileGameObjects.Remove(tileToRemoveId);
-                            Debug.Log("Destroy");
-                        }
-                    }
-                    if(deltaY != 0) {
-                        int deltaDirection = (deltaY / Mathf.Abs(deltaY));
-                        int yRemove = newCenter.Y + ((viewHeight / 2) * deltaDirection + deltaDirection *2);
-                        string tileToRemoveId = new Tile(x, yRemove).GetID();
-                        if(tileGameObjects.ContainsKey(tileToRemoveId)) {
-                            Destroy(tileGameObjects[tileToRemoveId]);
-                            tileGameObjects.Remove(tileToRemoveId);
-                            Debug.Log("Destroy");
-                        }
-                    }*/
                 }
             }
         }
+
+        int yRemoveStart = oldCenter.Y - viewHeight / 2;
+        int yRemoveStop = oldCenter.Y + viewHeight / 2;
+        int xRemoveStart = oldCenter.X - viewWidth / 2;
+        int xRemoveStop = oldCenter.X + viewWidth / 2;
+
+        for(int y = yRemoveStart; y <= yRemoveStop; y++) {
+            for(int x = xRemoveStart; x <= xRemoveStop; x++) {
+                                
+                bool isOutsideView = y < yAddStart || y > yAddStop || x < xAddStart || x > xAddStop;
+                if(!isOutsideView) {
+                    continue;
+                }
+
+                GameObject tileToRemove;
+                string idToRemove = new Tile(x, y).GetID();
+
+                if(tileGameObjects.TryGetValue(idToRemove, out tileToRemove)) {
+                    tileGameObjects.Remove(idToRemove);
+                    Destroy(tileToRemove);
+                }
+            }
+        }
+
         currentCenter = newCenter;
     }
     private Vector3 GetWorldPositionByTileIndex(int x, int y) {
