@@ -1,8 +1,10 @@
 """Parse the World xslx file and save it as a Unity readable csv."""
 from openpyxl import load_workbook
 from collections import namedtuple
+import csv
 
 Tile = namedtuple("Tile", "TileType")
+
 
 def parse_color_chart(chart_worksheet):
     """Parse the color chart of the World file."""
@@ -31,8 +33,17 @@ def parse_world(world_worksheet, color_dict):
 
 def save_world(world):
     """Save the World file."""
-    
-    pass
+    with open('eggs.csv', 'wb') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',',
+                            quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        row = []
+        index = 0
+        for i in world:
+            row = []
+            for j in world[index]:
+                row.append(j.TileType.strip())
+            writer.writerow(row)
+            index += 1
 
 
 if __name__ == '__main__':
@@ -42,3 +53,4 @@ if __name__ == '__main__':
     world_worksheet = wb["World"]
     color_dict = parse_color_chart(color_chart_sheet)
     world = parse_world(world_worksheet, color_dict)
+    save_world(world)
