@@ -33,7 +33,7 @@ def parse_world(world_worksheet, color_dict):
 
 def save_world(world):
     """Save the World file."""
-    with open('eggs.csv', 'wb') as csvfile:
+    with open('../Assets/Resources/world_parsed.csv', 'wb') as csvfile:
         writer = csv.writer(csvfile, delimiter=',',
                             quotechar='"', quoting=csv.QUOTE_MINIMAL)
         row = []
