@@ -92,4 +92,18 @@ public class TileManager {
 
         return new Coordinate(x, y);
     }
+
+    public Tile GetTileByWorldPosition(Vector3 worldPosition, float tileSize)
+    {
+        Coordinate coord = GetCoordByWorldPosition(worldPosition, tileSize);
+        long id = Tile.GetIDbyXY(coord.X, coord.Y);
+
+        Tile tile;
+        if (!tiles.TryGetValue(id, out tile))
+        {
+            return null;
+        }
+
+        return tile;
+    }
 }

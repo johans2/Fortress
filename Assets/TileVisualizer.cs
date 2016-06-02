@@ -18,7 +18,8 @@ public class TileVisualizer : MonoBehaviour {
     private Dictionary<long, GameObject> tileGameObjects;
     private List<GameObject> tilePool;
 
-    private Tile currentCenter;
+    //private Tile currentCenter;
+    private Coordinate currentCenter;
 
     private int viewWidth;
     private int viewHeight;
@@ -32,10 +33,10 @@ public class TileVisualizer : MonoBehaviour {
         
         Vector3 bottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, -Camera.main.transform.position.z));
         Vector3 center = Camera.main.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, -Camera.main.transform.position.z));
-        
-        currentCenter = GetTileByWorldPosition(center);
-        viewWidth = (GetTileByWorldPosition(center).X - GetTileByWorldPosition(bottomLeft).X) * 2;
-        viewHeight = (GetTileByWorldPosition(center).Y - GetTileByWorldPosition(bottomLeft).Y) * 2;
+
+        currentCenter = tileManager.GetCoordByWorldPosition(center, tileSize);
+        viewWidth = (currentCenter.X - tileManager.GetCoordByWorldPosition(bottomLeft, tileSize).X) * 2;
+        viewHeight = (currentCenter.Y - tileManager.GetCoordByWorldPosition(bottomLeft, tileSize).Y) * 2;
 
         FillView(currentCenter, viewWidth, viewHeight);
     }
@@ -57,7 +58,7 @@ public class TileVisualizer : MonoBehaviour {
         Debug.DrawLine(bottomLeft, topLeft, Color.red);
     }
 
-    void FillView(Tile center, int viewWidth, int viewHeight) {
+    void FillView(Coordinate center, int viewWidth, int viewHeight) {
         Color color = Random.ColorHSV();
         for(int y = center.Y + (viewHeight / 2); y >= (center.Y - viewHeight / 2); y--) {
             color = Random.ColorHSV();
@@ -99,7 +100,7 @@ public class TileVisualizer : MonoBehaviour {
 
     void CheckTile() {
         Vector3 newCenterPos = Camera.main.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, -Camera.main.transform.position.z));
-        Tile newCenter = GetTileByWorldPosition(newCenterPos);
+        Coordinate newCenter = tileManager.GetCoordByWorldPosition(newCenterPos, tileSize);// GetTileByWorldPosition(newCenterPos);
 
         if(currentCenter.X != newCenter.X || currentCenter.Y != newCenter.Y) {
             OnEnterNewTile(currentCenter, newCenter);
@@ -107,7 +108,7 @@ public class TileVisualizer : MonoBehaviour {
 
     }
 
-    private void OnEnterNewTile(Tile oldCenter, Tile newCenter) {
+    private void OnEnterNewTile(Coordinate oldCenter, Coordinate newCenter) {
         int yStartNew = newCenter.Y - viewHeight / 2;
         int yStopNew = newCenter.Y + viewHeight / 2;
         int xStartNew = newCenter.X - viewWidth / 2;
@@ -152,7 +153,7 @@ public class TileVisualizer : MonoBehaviour {
 
         currentCenter = newCenter;
     }
-    
+    /*
     public static Tile GetTileByWorldPosition(Vector3 worldPosition) {
         int tileX;
         int tileY;
@@ -172,7 +173,7 @@ public class TileVisualizer : MonoBehaviour {
         }
 
         return new Tile(tileX, tileY, TileType.Clear);
-    }
+    }*/
 
 }
 
