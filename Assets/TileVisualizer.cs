@@ -62,8 +62,8 @@ public class TileVisualizer : MonoBehaviour {
         for(int y = center.Y + (viewHeight / 2); y >= (center.Y - viewHeight / 2); y--) {
             color = Random.ColorHSV();
             for(int x = center.X - (viewWidth / 2); x <= center.X + (viewWidth / 2); x++) {
-                Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
-                Tile tile = new Tile(x, y);
+                Vector3 tilePosition = tileManager.GetWorldPositionByTileIndex(x, y, tileSize);
+                Tile tile = new Tile(x, y, TileType.Clear);
                 GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
                 tileGameObject.GetComponent<Renderer>().material.color = color;
                 tileGameObjects.Add(tile.GetID(), tileGameObject);
@@ -117,7 +117,7 @@ public class TileVisualizer : MonoBehaviour {
         for(int y = yStartNew; y <= yStopNew; y++) {
             for(int x = xStartNew; x <= xStopNew; x++) {
                 GameObject existing;
-                Vector3 tilePosition = GetWorldPositionByTileIndex(x, y);
+                Vector3 tilePosition = tileManager.GetWorldPositionByTileIndex(x, y, tileSize);
                 long newTileId = Tile.GetIDbyXY(x, y);
 
                 if(!tileGameObjects.TryGetValue(newTileId, out existing)) {
@@ -152,10 +152,7 @@ public class TileVisualizer : MonoBehaviour {
 
         currentCenter = newCenter;
     }
-    private Vector3 GetWorldPositionByTileIndex(int x, int y) {
-        return new Vector3(x * tileSize, y * tileSize, 0);
-    }
-
+    
     public static Tile GetTileByWorldPosition(Vector3 worldPosition) {
         int tileX;
         int tileY;
@@ -174,9 +171,7 @@ public class TileVisualizer : MonoBehaviour {
             tileY = Mathf.CeilToInt(Mathf.Abs(worldPosition.y) / tileSize) * -1;
         }
 
-        return new Tile(tileX, tileY);
-
-
+        return new Tile(tileX, tileY, TileType.Clear);
     }
 
 }
