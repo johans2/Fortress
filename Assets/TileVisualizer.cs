@@ -29,6 +29,7 @@ public class TileVisualizer : MonoBehaviour {
     private Coordinate currentCenter;
     private int viewWidth;
     private int viewHeight;
+    private int viewBuffer = 3;
 
     void Start() {
         this.Inject();
@@ -42,10 +43,10 @@ public class TileVisualizer : MonoBehaviour {
         Vector3 center = Camera.main.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, -Camera.main.transform.position.z));
 
         currentCenter = tileManager.GetCoordByWorldPosition(center, tileSize);
-        viewWidth = (currentCenter.X - tileManager.GetCoordByWorldPosition(bottomLeft, tileSize).X) * 2;
-        viewHeight = (currentCenter.Y - tileManager.GetCoordByWorldPosition(bottomLeft, tileSize).Y) * 2;
+        viewWidth = (currentCenter.X - tileManager.GetCoordByWorldPosition(bottomLeft, tileSize).X) * 2 + viewBuffer;
+        viewHeight = (currentCenter.Y - tileManager.GetCoordByWorldPosition(bottomLeft, tileSize).Y) * 2 + viewBuffer;
 
-        FillView(currentCenter, viewWidth, viewHeight);
+        OnEnterNewTile(currentCenter, currentCenter);
     }
 
     void Update() {
@@ -71,21 +72,7 @@ public class TileVisualizer : MonoBehaviour {
             textureDict.Add(textures[i].tileType, textures[i].texture);
         }
     }
-
-    void FillView(Coordinate center, int viewWidth, int viewHeight) {
-        Color color = UnityEngine.Random.ColorHSV();
-        for(int y = center.Y + (viewHeight / 2); y >= (center.Y - viewHeight / 2); y--) {
-            color = UnityEngine.Random.ColorHSV();
-            for(int x = center.X - (viewWidth / 2); x <= center.X + (viewWidth / 2); x++) {
-                Vector3 tilePosition = tileManager.GetWorldPositionByTileIndex(x, y, tileSize);
-                Tile tile = new Tile(x, y, TileType.Clear);
-                GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
-                tileGameObject.GetComponent<Renderer>().material.color = color;
-                activeTiles.Add(tile.GetID(), tileGameObject);
-            }
-        }
-    }
-
+    
     void FillTilePool() {
         for(int i = 0; i <= poolSize; i++) {
             GameObject tile = (GameObject)Instantiate(tilePrefab, new Vector3(999f, 999f, 999f), Quaternion.identity);
@@ -115,7 +102,7 @@ public class TileVisualizer : MonoBehaviour {
 
     void CheckTile() {
         Vector3 newCenterPos = Camera.main.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, -Camera.main.transform.position.z));
-        Coordinate newCenter = tileManager.GetCoordByWorldPosition(newCenterPos, tileSize);// GetTileByWorldPosition(newCenterPos);
+        Coordinate newCenter = tileManager.GetCoordByWorldPosition(newCenterPos, tileSize);
 
         if(currentCenter.X != newCenter.X || currentCenter.Y != newCenter.Y) {
             OnEnterNewTile(currentCenter, newCenter);
