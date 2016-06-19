@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+// TODO: this should be a string or int identifier, that can be directly set from the excel document.
 public enum TileType {
     Sky,
     Ground,

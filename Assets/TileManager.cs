@@ -56,7 +56,7 @@ public class TileManager {
             case "GROUND":
                 return new Tile(x, y, TileType.Ground);
             case "CLEAR":
-                return null;
+                return new Tile(x, y, TileType.Clear);
             default:
                 throw new ArgumentException("Unable to create tile with type " + type);;
         }

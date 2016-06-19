@@ -3,32 +3,39 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections;
 using CakewalkIoC.Injection;
-
+using System;
 
 public class TileVisualizer : MonoBehaviour {
+    [Serializable]
+    public class TextureData
+    {
+        public TileType tileType;
+        public Texture texture;
+    }
 
     public GameObject tileParent;
     public GameObject tilePrefab;
     public int poolSize = 2000;
+    public TextureData[] textures;
+
+    private Dictionary<TileType, Texture> textureDict;
 
     [Dependency]
     private TileManager tileManager { get; set; }
 
     private static float tileSize = 1f;
-    private Dictionary<long, GameObject> tileGameObjects;
+    private Dictionary<long, GameObject> activeTiles;
     private List<GameObject> tilePool;
-
-    //private Tile currentCenter;
     private Coordinate currentCenter;
-
     private int viewWidth;
     private int viewHeight;
 
     void Start() {
         this.Inject();
-
         tilePool = new List<GameObject>();
-        tileGameObjects = new Dictionary<long, GameObject>(poolSize);
+        activeTiles = new Dictionary<long, GameObject>(poolSize);
+        textureDict = new Dictionary<TileType, Texture>();
+        ParseTextures();
         FillTilePool();
         
         Vector3 bottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, -Camera.main.transform.position.z));
@@ -58,16 +65,23 @@ public class TileVisualizer : MonoBehaviour {
         Debug.DrawLine(bottomLeft, topLeft, Color.red);
     }
 
+    void ParseTextures() {
+        for (int i = 0; i < textures.Length; i++)
+        {
+            textureDict.Add(textures[i].tileType, textures[i].texture);
+        }
+    }
+
     void FillView(Coordinate center, int viewWidth, int viewHeight) {
-        Color color = Random.ColorHSV();
+        Color color = UnityEngine.Random.ColorHSV();
         for(int y = center.Y + (viewHeight / 2); y >= (center.Y - viewHeight / 2); y--) {
-            color = Random.ColorHSV();
+            color = UnityEngine.Random.ColorHSV();
             for(int x = center.X - (viewWidth / 2); x <= center.X + (viewWidth / 2); x++) {
                 Vector3 tilePosition = tileManager.GetWorldPositionByTileIndex(x, y, tileSize);
                 Tile tile = new Tile(x, y, TileType.Clear);
                 GameObject tileGameObject = (GameObject)Instantiate(tilePrefab, tilePosition, Quaternion.identity);
                 tileGameObject.GetComponent<Renderer>().material.color = color;
-                tileGameObjects.Add(tile.GetID(), tileGameObject);
+                activeTiles.Add(tile.GetID(), tileGameObject);
             }
         }
     }
@@ -81,10 +95,11 @@ public class TileVisualizer : MonoBehaviour {
         }
     }
 
-    GameObject ActivateTile(Vector3 position) {
+    GameObject ActivateTile(Tile tile, Vector3 position) {
         for(int i = 0; i < tilePool.Count; i++) {
             if(!tilePool[i].activeInHierarchy) {
                 tilePool[i].transform.position = position;
+                tilePool[i].GetComponent<MeshRenderer>().material.mainTexture = GetTexture(tile.Type);
                 tilePool[i].SetActive(true);
 
                 return tilePool[i];
@@ -108,6 +123,15 @@ public class TileVisualizer : MonoBehaviour {
 
     }
 
+    private Texture GetTexture(TileType tileType) {
+        Texture tex;
+        if (!textureDict.TryGetValue(tileType, out tex))
+        {
+            throw new ArgumentException("No texture registered for TileType " + tileType.ToString());
+        }
+        return tex;
+    }
+
     private void OnEnterNewTile(Coordinate oldCenter, Coordinate newCenter) {
         int yStartNew = newCenter.Y - viewHeight / 2;
         int yStopNew = newCenter.Y + viewHeight / 2;
@@ -118,12 +142,17 @@ public class TileVisualizer : MonoBehaviour {
         for(int y = yStartNew; y <= yStopNew; y++) {
             for(int x = xStartNew; x <= xStopNew; x++) {
                 GameObject existing;
-                Vector3 tilePosition = tileManager.GetWorldPositionByTileIndex(x, y, tileSize);
+
                 long newTileId = Tile.GetIDbyXY(x, y);
 
-                if(!tileGameObjects.TryGetValue(newTileId, out existing)) {
-                    GameObject newTileGameObject = ActivateTile(tilePosition);
-                    tileGameObjects.Add(newTileId, newTileGameObject);
+                if(!activeTiles.TryGetValue(newTileId, out existing)) {
+                    Vector3 tilePosition = tileManager.GetWorldPositionByTileIndex(x, y, tileSize);
+                    Tile tile = tileManager.GetTileByWorldPosition(tilePosition, tileSize);
+                    if (tile != null) // Outside world.
+                    {
+                        GameObject newTileGameObject = ActivateTile(tile, tilePosition);
+                        activeTiles.Add(newTileId, newTileGameObject);
+                    }
                 }
             }
         }
@@ -144,8 +173,8 @@ public class TileVisualizer : MonoBehaviour {
 
                 GameObject tileToRemove;
                 long idToRemove = Tile.GetIDbyXY(x, y);
-                if(tileGameObjects.TryGetValue(idToRemove, out tileToRemove)) {
-                    tileGameObjects.Remove(idToRemove);
+                if(activeTiles.TryGetValue(idToRemove, out tileToRemove)) {
+                    activeTiles.Remove(idToRemove);
                     DeactivateTile(tileToRemove);
                 }
             }
@@ -153,27 +182,6 @@ public class TileVisualizer : MonoBehaviour {
 
         currentCenter = newCenter;
     }
-    /*
-    public static Tile GetTileByWorldPosition(Vector3 worldPosition) {
-        int tileX;
-        int tileY;
-
-        if(worldPosition.x > 0f) {
-            tileX = Mathf.FloorToInt(worldPosition.x / tileSize);
-        }
-        else {
-            tileX = Mathf.CeilToInt(Mathf.Abs(worldPosition.x) / tileSize) * -1;
-        }
-
-        if(worldPosition.y > 0f) {
-            tileY = Mathf.FloorToInt(worldPosition.y / tileSize);
-        }
-        else {
-            tileY = Mathf.CeilToInt(Mathf.Abs(worldPosition.y) / tileSize) * -1;
-        }
-
-        return new Tile(tileX, tileY, TileType.Clear);
-    }*/
 
 }
 
