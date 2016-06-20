@@ -13,7 +13,8 @@ public class Tile {
     public int X { get; private set; }
     public int Y { get; private set; }
     public TileType Type { get; private set; }
-
+    public int EdgeIndex { get; set; }
+    
     public Tile(int x, int y, TileType type) {
         X = x;
         Y = y;

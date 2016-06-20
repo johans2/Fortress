@@ -81,7 +81,7 @@ public class TileVisualizer : MonoBehaviour {
             tilePool.Add(tile);
         }
     }
-
+    
     GameObject ActivateTile(Tile tile, Vector3 position) {
         for(int i = 0; i < tilePool.Count; i++) {
             if(!tilePool[i].activeInHierarchy) {

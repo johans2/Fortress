@@ -20,6 +20,10 @@ public class TileManager {
         }
         return tile;
     }
+    
+    public Tile GetTileByIndex(int x, int y) {
+        return GetTileById(Tile.GetIDbyXY(x, y));
+    }
 
     private void ParseWorld() {
         try
@@ -36,30 +40,58 @@ public class TileManager {
                         tiles.Add(tile.GetID(), tile);
                     }
                 }
-
             }
-
         }
-        catch (System.Exception)
+        catch (Exception ex)
         {
-
-
-            throw;
+            throw new Exception("Unable to parse world" + ex.ToString());
         }
     }
 
     private Tile CreateTile(int x, int y, string type) {
+        TileType tileType = TileType.Clear;
+
         switch (type)
         {
             case "SKY":
-                return new Tile(x, y, TileType.Sky);
+                tileType = TileType.Sky;
+                break;
             case "GROUND":
-                return new Tile(x, y, TileType.Ground);
+                tileType = TileType.Ground;
+                break;
             case "CLEAR":
-                return new Tile(x, y, TileType.Clear);
+                tileType = TileType.Clear;
+                break;
             default:
                 throw new ArgumentException("Unable to create tile with type " + type);;
         }
+
+        Tile tile = new Tile(x, y, tileType);
+        tile.EdgeIndex = SetTileEdgeIndex(ref tile);
+
+        return tile;
+    }
+
+    private int SetTileEdgeIndex(ref Tile tile) {
+        int x = tile.X;
+        int y = tile.Y;
+
+        int sum = 0;
+        Tile above = GetTileByIndex(x, y + 1);
+        Tile left = GetTileByIndex(x - 1, y + 1);
+        Tile below = GetTileByIndex(x, y - 1);
+        Tile right = GetTileByIndex(x + 1, y);
+
+        if(above != null && above.Type == tile.Type)
+            sum += 1;
+        if(left != null && left.Type == tile.Type)
+            sum += 2;
+        if(below != null && below.Type == tile.Type)
+            sum += 4;
+        if(right != null && right.Type == tile.Type)
+            sum += 8;
+
+        return sum;
     }
 
     public Vector3 GetWorldPositionByTileIndex(int x, int y, float tileSize)
