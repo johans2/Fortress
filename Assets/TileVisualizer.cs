@@ -87,6 +87,7 @@ public class TileVisualizer : MonoBehaviour {
             if(!tilePool[i].activeInHierarchy) {
                 tilePool[i].transform.position = position;
                 tilePool[i].GetComponent<MeshRenderer>().material.mainTexture = GetTexture(tile.Type);
+                tilePool[i].GetComponent<MeshRenderer>().material.SetTextureOffset("_MainTex", new Vector2(tile.EdgeIndex * 0.0625f, 0));
                 tilePool[i].SetActive(true);
 
                 return tilePool[i];
@@ -114,7 +115,7 @@ public class TileVisualizer : MonoBehaviour {
         Texture tex;
         if (!textureDict.TryGetValue(tileType, out tex))
         {
-            throw new ArgumentException("No texture registered for TileType " + tileType.ToString());
+            return null;//throw new ArgumentException(string.Format("No texture registered for TileType {0}", tileType.ToString()));
         }
         return tex;
     }

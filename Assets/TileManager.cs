@@ -10,6 +10,7 @@ public class TileManager {
     public TileManager() {
         tiles = new Dictionary<long, Tile>();
         ParseWorld();
+        SetTileEdgeIndexes();
     }
 
     public Tile GetTileById(long id) {
@@ -65,35 +66,39 @@ public class TileManager {
             default:
                 throw new ArgumentException("Unable to create tile with type " + type);;
         }
-
-        Tile tile = new Tile(x, y, tileType);
-        tile.EdgeIndex = SetTileEdgeIndex(ref tile);
-
-        return tile;
+        
+        return new Tile(x, y, tileType);
     }
 
-    private int SetTileEdgeIndex(ref Tile tile) {
-        int x = tile.X;
-        int y = tile.Y;
+    private void SetTileEdgeIndexes() {
+        foreach (KeyValuePair<long, Tile> kvPair in tiles)
+        {
+            Tile tile = kvPair.Value;
 
-        int sum = 0;
-        Tile above = GetTileByIndex(x, y + 1);
-        Tile left = GetTileByIndex(x - 1, y + 1);
-        Tile below = GetTileByIndex(x, y - 1);
-        Tile right = GetTileByIndex(x + 1, y);
+            int x = tile.X;
+            int y = tile.Y;
 
-        if(above != null && above.Type == tile.Type)
-            sum += 1;
-        if(left != null && left.Type == tile.Type)
-            sum += 2;
-        if(below != null && below.Type == tile.Type)
-            sum += 4;
-        if(right != null && right.Type == tile.Type)
-            sum += 8;
+            int sum = 0;
+            Tile above = GetTileByIndex(x, y + 1);
+            Tile left = GetTileByIndex(x - 1, y + 1);
+            Tile below = GetTileByIndex(x, y - 1);
+            Tile right = GetTileByIndex(x + 1, y);
 
-        return sum;
+            if (above != null && above.Type == tile.Type)
+                sum += 1;
+            if (left != null && left.Type == tile.Type)
+                sum += 2;
+            if (below != null && below.Type == tile.Type)
+                sum += 4;
+            if (right != null && right.Type == tile.Type)
+                sum += 8;
+
+            kvPair.Value.EdgeIndex = sum;
+        }
+
+
     }
-
+    
     public Vector3 GetWorldPositionByTileIndex(int x, int y, float tileSize)
     {
         return new Vector3(x * tileSize, y * tileSize, 0);
