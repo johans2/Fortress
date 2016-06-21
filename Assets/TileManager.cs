@@ -50,24 +50,18 @@ public class TileManager {
     }
 
     private Tile CreateTile(int x, int y, string type) {
-        TileType tileType = TileType.Clear;
-
+        
         switch (type)
         {
             case "SKY":
-                tileType = TileType.Sky;
-                break;
             case "GROUND":
-                tileType = TileType.Ground;
-                break;
             case "CLEAR":
-                tileType = TileType.Clear;
                 break;
             default:
                 throw new ArgumentException("Unable to create tile with type " + type);;
         }
         
-        return new Tile(x, y, tileType);
+        return new Tile(x, y, type);
     }
 
     private void SetTileEdgeIndexes() {

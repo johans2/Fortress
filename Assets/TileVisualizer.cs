@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
-using System.Collections;
 using CakewalkIoC.Injection;
 using System;
 
@@ -9,7 +7,7 @@ public class TileVisualizer : MonoBehaviour {
     [Serializable]
     public class TextureData
     {
-        public TileType tileType;
+        public string tileType;
         public Texture texture;
     }
 
@@ -18,14 +16,15 @@ public class TileVisualizer : MonoBehaviour {
     public int poolSize = 1000;
     public TextureData[] textures;
 
-    private Dictionary<TileType, Texture> textureDict;
-
     [Dependency]
     private TileManager tileManager { get; set; }
 
+
+
     private static float tileSize = 1f;
-    private Dictionary<long, GameObject> activeTiles;
-    private List<GameObject> tilePool;
+    private Stack<GameObject> tilePool;
+    private Dictionary<long, GameObject> visibleTiles;
+    private Dictionary<string, Texture> textureDict;
     private Coordinate currentCenter;
     private int viewWidth;
     private int viewHeight;
@@ -33,9 +32,9 @@ public class TileVisualizer : MonoBehaviour {
 
     void Start() {
         this.Inject();
-        tilePool = new List<GameObject>();
-        activeTiles = new Dictionary<long, GameObject>(poolSize);
-        textureDict = new Dictionary<TileType, Texture>();
+        tilePool = new Stack<GameObject>(poolSize);
+        visibleTiles = new Dictionary<long, GameObject>((viewHeight + viewBuffer) * (viewWidth + viewBuffer));
+        textureDict = new Dictionary<string, Texture>();
         ParseTextures();
         FillTilePool();
         
@@ -78,22 +77,23 @@ public class TileVisualizer : MonoBehaviour {
             GameObject tile = (GameObject)Instantiate(tilePrefab, new Vector3(999f, 999f, 999f), Quaternion.identity);
             tile.transform.parent = tileParent.transform;
             tile.SetActive(false);
-            tilePool.Add(tile);
+            tilePool.Push(tile);
         }
     }
     
     GameObject ActivateTile(Tile tile, Vector3 position) {
-        for(int i = 0; i < poolSize; i++) {
-            if(!tilePool[i].activeInHierarchy) {
-                tilePool[i].transform.position = position;
-                tilePool[i].GetComponent<MeshRenderer>().material.mainTexture = GetTexture(tile.Type);
-                tilePool[i].GetComponent<MeshRenderer>().material.SetTextureOffset("_MainTex", GetTextureOffset(tile.EdgeIndex));
-                tilePool[i].SetActive(true);
-
-                return tilePool[i];
-            }
+        if (tilePool.Count == 0)
+        {
+            throw new Exception("TilePool comsumed.");
         }
-        throw new System.Exception("TilePool comsumed.");
+
+        GameObject tileGameObject = tilePool.Pop();
+        tileGameObject.transform.position = position;
+        tileGameObject.GetComponent<MeshRenderer>().material.mainTexture = GetTexture(tile.Type);
+        tileGameObject.GetComponent<MeshRenderer>().material.SetTextureOffset("_MainTex", GetTextureOffset(tile.EdgeIndex));
+        tileGameObject.SetActive(true);
+
+        return tileGameObject;
     }
 
     Vector2 GetTextureOffset(int edgeIndex) {
@@ -138,7 +138,7 @@ public class TileVisualizer : MonoBehaviour {
 
     void DeactivateTile(GameObject tile) {
         tile.SetActive(false);
-        tilePool.Add(tile);
+        tilePool.Push(tile);
     }
 
     void CheckTile() {
@@ -151,11 +151,11 @@ public class TileVisualizer : MonoBehaviour {
 
     }
 
-    private Texture GetTexture(TileType tileType) {
+    private Texture GetTexture(string tileType) {
         Texture tex;
         if (!textureDict.TryGetValue(tileType, out tex))
         {
-            return null;//throw new ArgumentException(string.Format("No texture registered for TileType {0}", tileType.ToString()));
+            throw new ArgumentException(string.Format("No texture registered for TileType {0}", tileType.ToString()));
         }
         return tex;
     }
@@ -173,13 +173,13 @@ public class TileVisualizer : MonoBehaviour {
 
                 long newTileId = Tile.GetIDbyXY(x, y);
 
-                if(!activeTiles.TryGetValue(newTileId, out existing)) {
+                if(!visibleTiles.TryGetValue(newTileId, out existing)) {
                     Vector3 tilePosition = tileManager.GetWorldPositionByTileIndex(x, y, tileSize);
                     Tile tile = tileManager.GetTileByWorldPosition(tilePosition, tileSize);
                     if (tile != null) // Outside world.
                     {
                         GameObject newTileGameObject = ActivateTile(tile, tilePosition);
-                        activeTiles.Add(newTileId, newTileGameObject);
+                        visibleTiles.Add(newTileId, newTileGameObject);
                     }
                 }
             }
@@ -201,8 +201,8 @@ public class TileVisualizer : MonoBehaviour {
 
                 GameObject tileToRemove;
                 long idToRemove = Tile.GetIDbyXY(x, y);
-                if(activeTiles.TryGetValue(idToRemove, out tileToRemove)) {
-                    activeTiles.Remove(idToRemove);
+                if(visibleTiles.TryGetValue(idToRemove, out tileToRemove)) {
+                    visibleTiles.Remove(idToRemove);
                     DeactivateTile(tileToRemove);
                 }
             }

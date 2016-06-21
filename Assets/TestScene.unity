@@ -236,6 +236,18 @@ Prefab:
       propertyPath: tileParent
       value: 
       objectReference: {fileID: 1751295566}
+    - target: {fileID: 11409794, guid: 55082746d7e2d54419358e1d548b24dc, type: 2}
+      propertyPath: textures.Array.data[0].tileType
+      value: CLEAR
+      objectReference: {fileID: 0}
+    - target: {fileID: 11409794, guid: 55082746d7e2d54419358e1d548b24dc, type: 2}
+      propertyPath: textures.Array.data[1].tileType
+      value: SKY
+      objectReference: {fileID: 0}
+    - target: {fileID: 11409794, guid: 55082746d7e2d54419358e1d548b24dc, type: 2}
+      propertyPath: textures.Array.data[2].tileType
+      value: GROUND
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 55082746d7e2d54419358e1d548b24dc, type: 2}
   m_IsPrefabParent: 0

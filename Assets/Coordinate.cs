@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Coordinate {
+public struct Coordinate {
 
     public int X { get; private set; }
     public int Y { get; private set; }
