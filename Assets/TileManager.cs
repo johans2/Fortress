@@ -80,7 +80,7 @@ public class TileManager {
 
             int sum = 0;
             Tile above = GetTileByIndex(x, y + 1);
-            Tile left = GetTileByIndex(x - 1, y + 1);
+            Tile left = GetTileByIndex(x - 1, y);
             Tile below = GetTileByIndex(x, y - 1);
             Tile right = GetTileByIndex(x + 1, y);
 
@@ -95,8 +95,6 @@ public class TileManager {
 
             kvPair.Value.EdgeIndex = sum;
         }
-
-
     }
     
     public Vector3 GetWorldPositionByTileIndex(int x, int y, float tileSize)

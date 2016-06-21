@@ -15,7 +15,7 @@ public class TileVisualizer : MonoBehaviour {
 
     public GameObject tileParent;
     public GameObject tilePrefab;
-    public int poolSize = 2000;
+    public int poolSize = 1000;
     public TextureData[] textures;
 
     private Dictionary<TileType, Texture> textureDict;
@@ -83,17 +83,57 @@ public class TileVisualizer : MonoBehaviour {
     }
     
     GameObject ActivateTile(Tile tile, Vector3 position) {
-        for(int i = 0; i < tilePool.Count; i++) {
+        for(int i = 0; i < poolSize; i++) {
             if(!tilePool[i].activeInHierarchy) {
                 tilePool[i].transform.position = position;
                 tilePool[i].GetComponent<MeshRenderer>().material.mainTexture = GetTexture(tile.Type);
-                tilePool[i].GetComponent<MeshRenderer>().material.SetTextureOffset("_MainTex", new Vector2(tile.EdgeIndex * 0.0625f, 0));
+                tilePool[i].GetComponent<MeshRenderer>().material.SetTextureOffset("_MainTex", GetTextureOffset(tile.EdgeIndex));
                 tilePool[i].SetActive(true);
 
                 return tilePool[i];
             }
         }
         throw new System.Exception("TilePool comsumed.");
+    }
+
+    Vector2 GetTextureOffset(int edgeIndex) {
+        switch (edgeIndex)
+        {
+            case 0:
+                return new Vector2(0,0);
+            case 1:
+                return new Vector2(0, 0.25f);
+            case 2:
+                return new Vector2(0.75f, 0);
+            case 3:
+                return new Vector2(0.75f, 0.25f);
+            case 4:
+                return new Vector2(0, 0.75f);
+            case 5:
+                return new Vector2(0, 0.5f);
+            case 6:
+                return new Vector2(0.75f, 0.75f);
+            case 7:
+                return new Vector2(0.75f, 0.5f);
+            case 8:
+                return new Vector2(0.25f, 0);
+            case 9:
+                return new Vector2(0.25f, 0.25f);
+            case 10:
+                return new Vector2(0.5f, 0);
+            case 11:
+                return new Vector2(0.5f, 0.25f);
+            case 12:
+                return new Vector2(0.25f, 0.75f);
+            case 13:
+                return new Vector2(0.25f, 0.5f);
+            case 14:
+                return new Vector2(0.5f, 0.75f);
+            case 15:
+                return new Vector2(0.5f, 0.5f);
+            default:
+                throw new Exception(string.Format("Invalid edge index: " + edgeIndex));
+        }
     }
 
     void DeactivateTile(GameObject tile) {
