@@ -325,6 +325,10 @@ Prefab:
       propertyPath: textures.Array.data[2].tileType
       value: GROUND
       objectReference: {fileID: 0}
+    - target: {fileID: 11409794, guid: 55082746d7e2d54419358e1d548b24dc, type: 2}
+      propertyPath: poolSize
+      value: 3000
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 55082746d7e2d54419358e1d548b24dc, type: 2}
   m_IsPrefabParent: 0
@@ -389,7 +393,7 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 90
-  orthographic: 0
+  orthographic: 1
   orthographic size: 5
   m_Depth: -1
   m_CullingMask:
